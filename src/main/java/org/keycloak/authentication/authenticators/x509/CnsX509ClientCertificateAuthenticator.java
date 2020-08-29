@@ -36,7 +36,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 
-public class MyX509ClientCertificateAuthenticator extends X509ClientCertificateAuthenticator {
+public class CnsX509ClientCertificateAuthenticator extends X509ClientCertificateAuthenticator {
 
     @Override
     public void close() {

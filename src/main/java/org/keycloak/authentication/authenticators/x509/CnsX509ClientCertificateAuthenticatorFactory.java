@@ -22,21 +22,21 @@ import org.keycloak.authentication.Authenticator;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 
-public class MyX509ClientCertificateAuthenticatorFactory  extends X509ClientCertificateAuthenticatorFactory {
+public class CnsX509ClientCertificateAuthenticatorFactory  extends X509ClientCertificateAuthenticatorFactory {
 
-    public static final String PROVIDER_ID = "my-auth-x509-client-username-form";
-    public static final MyX509ClientCertificateAuthenticator SINGLETON =
-            new MyX509ClientCertificateAuthenticator();
+    public static final String PROVIDER_ID = "cns-auth-x509-client-username-form";
+    public static final CnsX509ClientCertificateAuthenticator SINGLETON =
+            new CnsX509ClientCertificateAuthenticator();
 
 
     @Override
     public String getHelpText() {
-        return "My Validates username and password from X509 client certificate received as a part of mutual SSL handshake.";
+        return "Validates username and password from X509 client certificate (Italian CNS) received as a part of mutual SSL handshake.";
     }
 
     @Override
     public String getDisplayType() {
-        return "My X509/Validate Username Form";
+        return "CNS X509/Validate Username Form";
     }
 
     @Override
