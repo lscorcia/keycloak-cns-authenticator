@@ -46,6 +46,9 @@ mvn clean package && \
 sudo install -C -o keycloak -g keycloak target/cns-authenticator.jar /opt/keycloak/standalone/deployments/
 ```
 
+If successful you will find a new Execution Flow type called `CNS X509/Validate Username Form` in the
+`Add Execution` drop down list in the Authentication configuration screen.
+
 ## Open issues and limitations
 Feel free to open issues on GitHub if you spot something not working correctly!
 

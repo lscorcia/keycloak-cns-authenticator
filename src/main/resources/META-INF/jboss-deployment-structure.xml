@@ -2,6 +2,7 @@
 <jboss-deployment-structure>
     <deployment>
         <dependencies>
+            <module name="org.bouncycastle"/>
             <module name="org.keycloak.keycloak-services"/>
         </dependencies>
     </deployment>
