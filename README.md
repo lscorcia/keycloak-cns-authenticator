@@ -20,7 +20,9 @@ This project aims to create a new Authenticator that automatically creates users
 is presented to Keycloak.
 
 ## Status
-This project is under development. At the moment there is nothing to see here!
+This project is under development, so for the moment I won't publish any release and you will have to build it yourself.  
+It works and allows the creation of users from the data contained in the client certificate. The attribute
+mapping is hardcoded - if you want to change it, please see file `CnsX509ClientCertificateAuthenticator.java`.
 
 Until the project gets to a stable release, it will be targeting the most recent release of Keycloak as 
 published on the website (see property `version.keycloak` in file pom.xml). Currently the main branch is 
