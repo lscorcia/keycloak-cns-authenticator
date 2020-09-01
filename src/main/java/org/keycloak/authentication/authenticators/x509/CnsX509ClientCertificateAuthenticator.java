@@ -254,6 +254,9 @@ public class CnsX509ClientCertificateAuthenticator extends X509ClientCertificate
         UserModel user = context.getSession().userLocalStorage().addUser(realm, username);
         user.setEnabled(true);
         user.setEmail(email);
+        if (email != null && email.length() > 0)
+            user.setEmailVerified(true);
+
         user.setFirstName(firstname);
         user.setLastName(lastname);
         user.setSingleAttribute("fiscalNumber", fiscalNumber);
