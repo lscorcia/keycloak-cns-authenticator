@@ -20,6 +20,7 @@ package org.keycloak.authentication.authenticators.x509;
 
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
@@ -31,6 +32,9 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
+import org.bouncycastle.asn1.x509.CertificatePolicies;
+import org.bouncycastle.asn1.x509.Extensions;
+import org.bouncycastle.asn1.x509.PolicyInformation;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
@@ -44,6 +48,8 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+
+import static java.util.stream.Collectors.joining;
 
 public class CnsX509ClientCertificateAuthenticator extends X509ClientCertificateAuthenticator {
 
@@ -93,6 +99,43 @@ public class CnsX509ClientCertificateAuthenticator extends X509ClientCertificate
                 logger.error(e.getMessage(), e);
                 // TODO use specific locale to load error messages
                 String errorMessage = "Certificate validation's failed.";
+                // TODO is calling form().setErrors enough to show errors on login screen?
+                context.challenge(createErrorResponse(context, certs[0].getSubjectDN().getName(),
+                        errorMessage, e.getMessage()));
+                context.attempted();
+                return;
+            }
+
+            // Validate X509 client certificate
+            try {
+                boolean hasCnsExtension = false, hasCieExtension = false;
+
+                Extensions certExtensions = new JcaX509CertificateHolder(certs[0]).getExtensions();
+                if (certExtensions != null)
+                {
+                    CertificatePolicies policies = CertificatePolicies.fromExtensions(certExtensions);
+
+                    if (policies != null)
+                    {
+                        logger.infof("Certificate policies found: %s",
+                            Arrays.stream(policies.getPolicyInformation()).map(t -> t.getPolicyIdentifier().toString()).collect(joining(",")));
+
+                        for (PolicyInformation policy: policies.getPolicyInformation())
+                        {
+                            if (policy.getPolicyIdentifier().toString().equals("1.3.76.16.2.1")) hasCnsExtension = true;
+                            if (policy.getPolicyIdentifier().toString().equals("1.3.76.47.4")) hasCieExtension = true;
+                        }
+                    }
+                }
+
+                logger.infof("CNS Extension: %s - CIE Extension: %s", hasCnsExtension ? "present": "absent", hasCieExtension ? "present": "absent");
+
+                if (!hasCnsExtension && !hasCieExtension)
+                    throw new Exception("Certificate extended policy does not contain required OIDs (1.3.76.16.2.1, 1.3.76.47.4).");
+            } catch(Exception e) {
+                logger.error(e.getMessage(), e);
+                // TODO use specific locale to load error messages
+                String errorMessage = "Certificate extended policy validation's failed.";
                 // TODO is calling form().setErrors enough to show errors on login screen?
                 context.challenge(createErrorResponse(context, certs[0].getSubjectDN().getName(),
                         errorMessage, e.getMessage()));
