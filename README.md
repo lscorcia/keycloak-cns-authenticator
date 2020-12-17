@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/lscorcia/keycloak-cns-authenticator.svg?branch=master)](https://travis-ci.com/lscorcia/keycloak-cns-authenticator) 
+[![Build](https://github.com/lscorcia/keycloak-cns-authenticator/workflows/Build/badge.svg)](https://github.com/lscorcia/keycloak-cns-authenticator/actions?query=workflow%3ABuild) 
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/lscorcia/keycloak-cns-authenticator?sort=semver)](https://img.shields.io/github/v/release/lscorcia/keycloak-cns-authenticator?sort=semver) 
 [![GitHub All Releases](https://img.shields.io/github/downloads/lscorcia/keycloak-cns-authenticator/total)](https://img.shields.io/github/downloads/lscorcia/keycloak-cns-authenticator/total)
 [![GitHub issues](https://img.shields.io/github/issues/lscorcia/keycloak-cns-authenticator)](https://github.com/lscorcia/keycloak-cns-authenticator/issues)
