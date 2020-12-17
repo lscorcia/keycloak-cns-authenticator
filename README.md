@@ -26,7 +26,7 @@ mapping is hardcoded - if you want to change it, please see file `CnsX509ClientC
 
 Until the project gets to a stable release, it will be targeting the most recent release of Keycloak as 
 published on the website (see property `version.keycloak` in file pom.xml). Currently the main branch is 
-targeting Keycloak 11.0.1. **Do not use this provider with previous versions of Keycloak, it won't work!**
+targeting Keycloak 12.0.0. **Do not use this provider with previous versions of Keycloak, it won't work!**
 
 ## Build requirements
 * git
