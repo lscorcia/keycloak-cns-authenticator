@@ -115,7 +115,7 @@ public class CnsX509ClientCertificateAuthenticator extends X509ClientCertificate
                 validator.checkRevocationStatus()
                          .validateKeyUsage()
                          .validateExtendedKeyUsage()
-                         .validateTimestamps(config.isCertValidationEnabled());
+                         .validateTimestamps();
             } catch(Exception e) {
                 logger.error(e.getMessage(), e);
                 // TODO use specific locale to load error messages
