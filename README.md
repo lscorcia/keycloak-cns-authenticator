@@ -26,7 +26,10 @@ mapping is hardcoded - if you want to change it, please see file `CnsX509ClientC
 
 Until the project gets to a stable release, it will be targeting the most recent release of Keycloak as 
 published on the website (see property `version.keycloak` in file pom.xml). Currently the main branch is 
-targeting Keycloak 12.0.0. **Do not use this provider with previous versions of Keycloak, it won't work!**
+targeting Keycloak 13.0.0. **Do not use this provider with previous versions of Keycloak, it won't work!**
+
+I am also wondering if it should become a fully-fledged Identity Provider instead of an authenticator,
+but this will take quite some time to study and implement.
 
 ## Build requirements
 * git

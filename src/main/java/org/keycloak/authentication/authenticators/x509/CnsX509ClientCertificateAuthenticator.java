@@ -24,7 +24,6 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,15 +34,8 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import java.security.GeneralSecurityException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PublicKey;
-import java.security.SignatureException;
 import java.security.cert.CertPathBuilder;
-import java.security.cert.CertPathBuilderException;
 import java.security.cert.CertStore;
-import java.security.cert.CertificateException;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.PKIXCertPathBuilderResult;
@@ -71,6 +63,7 @@ import org.keycloak.models.utils.FormMessage;
 import org.keycloak.truststore.TruststoreProvider;
 
 import static java.util.stream.Collectors.joining;
+import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
 
 public class CnsX509ClientCertificateAuthenticator extends X509ClientCertificateAuthenticator {
 
@@ -239,6 +232,19 @@ public class CnsX509ClientCertificateAuthenticator extends X509ClientCertificate
                 }
             }
 
+            String bruteForceError = getDisabledByBruteForceEventError(context.getProtector(), context.getSession(), context.getRealm(), user);
+            if (bruteForceError != null) {
+                context.getEvent().user(user);
+                context.getEvent().error(bruteForceError);
+                // TODO use specific locale to load error messages
+                String errorMessage = "X509 certificate authentication's failed.";
+                // TODO is calling form().setErrors enough to show errors on login screen?
+                context.challenge(createErrorResponse(context, certs[0].getSubjectDN().getName(),
+                        errorMessage, "Invalid user"));
+                context.attempted();
+                return;
+            }
+
             if (!userEnabled(context, user)) {
                 // TODO use specific locale to load error messages
                 String errorMessage = "X509 certificate authentication's failed.";
@@ -247,19 +253,6 @@ public class CnsX509ClientCertificateAuthenticator extends X509ClientCertificate
                         errorMessage, "User is disabled"));
                 context.attempted();
                 return;
-            }
-            if (context.getRealm().isBruteForceProtected()) {
-                if (context.getProtector().isTemporarilyDisabled(context.getSession(), context.getRealm(), user)) {
-                    context.getEvent().user(user);
-                    context.getEvent().error(Errors.USER_TEMPORARILY_DISABLED);
-                    // TODO use specific locale to load error messages
-                    String errorMessage = "X509 certificate authentication's failed.";
-                    // TODO is calling form().setErrors enough to show errors on login screen?
-                    context.challenge(createErrorResponse(context, certs[0].getSubjectDN().getName(),
-                            errorMessage, "User is temporarily disabled. Contact administrator."));
-                    context.attempted();
-                    return;
-                }
             }
             context.setUser(user);
 
