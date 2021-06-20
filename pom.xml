@@ -21,10 +21,10 @@
         <failOnMissingWebXml>false</failOnMissingWebXml>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <version.keycloak>13.0.0</version.keycloak>
+        <version.keycloak>14.0.0</version.keycloak>
         <slf4j-api.version>1.7.30</slf4j-api.version>
-        <junit.version>4.13.1</junit.version>
-        <bouncycastle.version>1.65</bouncycastle.version>
+        <junit.version>4.13.2</junit.version>
+        <bouncycastle.version>1.68</bouncycastle.version>
     </properties>
 
     <scm>
