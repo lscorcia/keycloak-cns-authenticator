@@ -26,7 +26,7 @@ mapping is hardcoded - if you want to change it, please see file `CnsX509ClientC
 
 Until the project gets to a stable release, it will be targeting the most recent release of Keycloak as 
 published on the website (see property `version.keycloak` in file pom.xml). Currently the main branch is 
-targeting Keycloak 15.0.0. **Do not use this provider with previous versions of Keycloak, it won't work!**
+targeting Keycloak 16.1.1. **Do not use this provider with previous versions of Keycloak, it won't work!**
 
 I am also wondering if it should become a fully-fledged Identity Provider instead of an authenticator,
 but this will take quite some time to study and implement.
@@ -56,6 +56,19 @@ If successful you will find a new Execution Flow type called `CNS X509/Validate 
 
 ## Open issues and limitations
 Feel free to open issues on GitHub if you spot something not working correctly!
+
+## Related projects
+If you are interested in Keycloak plugins for the various Italian national auth
+systems, you may be interested also in:
+
+* Keycloak SPID Provider - https://github.com/italia/spid-keycloak-provider/  
+A Keycloak provider for the SPID federation
+
+* Keycloak CIE ID Provider - https://github.com/lscorcia/keycloak-cieid-provider/  
+A Keycloak provider for the CIE ID federation
+
+* Keycloak CNS Authenticator - https://github.com/lscorcia/keycloak-cns-authenticator/  
+A Keycloak authenticator to login using CNS tokens and smart cards
 
 ## License
 This project is released under the Apache License 2.0, same as the main Keycloak

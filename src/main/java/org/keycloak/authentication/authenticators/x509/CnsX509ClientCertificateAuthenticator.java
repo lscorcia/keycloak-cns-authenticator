@@ -20,33 +20,17 @@ package org.keycloak.authentication.authenticators.x509;
 
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import javax.ws.rs.core.MultivaluedHashMap;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-import java.security.GeneralSecurityException;
-import java.security.cert.CertPathBuilder;
-import java.security.cert.CertStore;
-import java.security.cert.CollectionCertStoreParameters;
-import java.security.cert.PKIXBuilderParameters;
-import java.security.cert.PKIXCertPathBuilderResult;
-import java.security.cert.TrustAnchor;
-import java.security.cert.X509CertSelector;
-import java.util.HashSet;
-import java.util.Set;
-
-import org.bouncycastle.asn1.x509.CertificatePolicies;
-import org.bouncycastle.asn1.x509.Extensions;
-import org.bouncycastle.asn1.x509.PolicyInformation;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
@@ -60,9 +44,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
-import org.keycloak.truststore.TruststoreProvider;
 
-import static java.util.stream.Collectors.joining;
 import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
 
 public class CnsX509ClientCertificateAuthenticator extends X509ClientCertificateAuthenticator {
@@ -106,76 +88,15 @@ public class CnsX509ClientCertificateAuthenticator extends X509ClientCertificate
                 CertificateValidator.CertificateValidatorBuilder builder = certificateValidationParameters(context.getSession(), config);
                 CertificateValidator validator = builder.build(certs);
                 validator.checkRevocationStatus()
+                         .validateTrust()
                          .validateKeyUsage()
                          .validateExtendedKeyUsage()
+                         .validatePolicy()
                          .validateTimestamps();
             } catch(Exception e) {
                 logger.error(e.getMessage(), e);
                 // TODO use specific locale to load error messages
                 String errorMessage = "Certificate validation failed.";
-                // TODO is calling form().setErrors enough to show errors on login screen?
-                context.challenge(createErrorResponse(context, certs[0].getSubjectDN().getName(),
-                        errorMessage, e.getMessage()));
-                context.attempted();
-                return;
-            }
-
-            // Validate X509 client certificate trust
-            try {
-                TruststoreProvider truststoreProvider = context.getSession().getProvider(TruststoreProvider.class);
-                if (truststoreProvider == null || truststoreProvider.getTruststore() == null) {
-                    logger.error("Cannot validate client certificate trust: Truststore not available");
-                }
-                else
-                {
-                    Set<X509Certificate> trustedRootCerts = truststoreProvider.getRootCertificates().entrySet().stream().map(t -> t.getValue()).collect(Collectors.toSet());
-                    Set<X509Certificate> trustedIntermediateCerts = truststoreProvider.getIntermediateCertificates().entrySet().stream().map(t -> t.getValue()).collect(Collectors.toSet());
-
-                    logger.errorf("Found %d trusted root certs, %d trusted intermediate certs", trustedRootCerts.size(), trustedIntermediateCerts.size());
-
-                    verifyCertificateTrust(certs[0], trustedRootCerts, trustedIntermediateCerts);
-                }
-            } catch(Exception e) {
-                logger.error(e.getMessage(), e);
-                // TODO use specific locale to load error messages
-                String errorMessage = "Certificate is not trusted.";
-                // TODO is calling form().setErrors enough to show errors on login screen?
-                context.challenge(createErrorResponse(context, certs[0].getSubjectDN().getName(),
-                        errorMessage, e.getMessage()));
-                context.attempted();
-                return;
-            }
-
-            // Validate X509 certificate extended policies
-            try {
-                boolean hasCnsExtension = false, hasCieExtension = false;
-
-                Extensions certExtensions = new JcaX509CertificateHolder(certs[0]).getExtensions();
-                if (certExtensions != null)
-                {
-                    CertificatePolicies policies = CertificatePolicies.fromExtensions(certExtensions);
-
-                    if (policies != null)
-                    {
-                        logger.infof("Certificate policies found: %s",
-                            Arrays.stream(policies.getPolicyInformation()).map(t -> t.getPolicyIdentifier().toString()).collect(joining(",")));
-
-                        for (PolicyInformation policy: policies.getPolicyInformation())
-                        {
-                            if (policy.getPolicyIdentifier().toString().equals("1.3.76.16.2.1")) hasCnsExtension = true;
-                            if (policy.getPolicyIdentifier().toString().equals("1.3.76.47.4")) hasCieExtension = true;
-                        }
-                    }
-                }
-
-                logger.infof("CNS Extension: %s - CIE Extension: %s", hasCnsExtension ? "present": "absent", hasCieExtension ? "present": "absent");
-
-                if (!hasCnsExtension && !hasCieExtension)
-                    throw new Exception("Certificate extended policy does not contain required OIDs (1.3.76.16.2.1, 1.3.76.47.4).");
-            } catch(Exception e) {
-                logger.error(e.getMessage(), e);
-                // TODO use specific locale to load error messages
-                String errorMessage = "Certificate extended policy validation's failed.";
                 // TODO is calling form().setErrors enough to show errors on login screen?
                 context.challenge(createErrorResponse(context, certs[0].getSubjectDN().getName(),
                         errorMessage, e.getMessage()));
@@ -277,52 +198,6 @@ public class CnsX509ClientCertificateAuthenticator extends X509ClientCertificate
             logger.errorf("[X509ClientCertificateAuthenticator:authenticate] Exception: %s", e.getMessage());
             context.attempted();
         }
-    }
-
-    /**
-    * Attempts to build a certification chain for given certificate and to verify
-    * it. Relies on a set of root CA certificates (trust anchors) and a set of
-    * intermediate certificates (to be used as part of the chain).
-    * @param cert - certificate for validation
-    * @param trustedRootCerts - set of trusted root CA certificates
-    * @param intermediateCerts - set of intermediate certificates
-    * @return the certification chain (if verification is successful)
-    * @throws GeneralSecurityException - if the verification is not successful
-    *       (e.g. certification path cannot be built or some certificate in the
-    *       chain is expired)
-    */
-    private static PKIXCertPathBuilderResult verifyCertificateTrust(X509Certificate cert, Set<X509Certificate> trustedRootCerts,
-        Set<X509Certificate> intermediateCerts) throws GeneralSecurityException {
-
-        // Create the selector that specifies the starting certificate
-        X509CertSelector selector = new X509CertSelector();
-        selector.setCertificate(cert);
-
-        // Create the trust anchors (set of root CA certificates)
-        Set<TrustAnchor> trustAnchors = new HashSet<TrustAnchor>();
-        for (X509Certificate trustedRootCert : trustedRootCerts) {
-            trustAnchors.add(new TrustAnchor(trustedRootCert, null));
-        }
-
-        // Configure the PKIX certificate builder algorithm parameters
-        PKIXBuilderParameters pkixParams =
-        new PKIXBuilderParameters(trustAnchors, selector);
-
-        // Disable CRL checks (this is done manually as additional step)
-        pkixParams.setRevocationEnabled(false);
-
-        // Specify a list of intermediate certificates
-        // certificate itself has to be added to the list
-        intermediateCerts.add(cert);
-        CertStore intermediateCertStore = CertStore.getInstance("Collection",
-        new CollectionCertStoreParameters(intermediateCerts), "BC");
-        pkixParams.addCertStore(intermediateCertStore);
-
-        // Build and verify the certification chain
-        CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", "BC");
-        PKIXCertPathBuilderResult result =
-        (PKIXCertPathBuilderResult) builder.build(pkixParams);
-        return result;
     }
 
     protected UserModel importUserToKeycloak(AuthenticationFlowContext context, X509Certificate[] certs, String userIdentity)
